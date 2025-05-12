@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Clock } from "lucide-react"
 
 export default function SignupPage() {
@@ -79,19 +78,6 @@ export default function SignupPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-              </div>
-              <div className="grid gap-2">
-                <Label>Account Type</Label>
-                <RadioGroup defaultValue="staff" value={role} onValueChange={setRole}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="staff" id="staff" />
-                    <Label htmlFor="staff">Staff</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="admin" id="admin" />
-                    <Label htmlFor="admin">Admin</Label>
-                  </div>
-                </RadioGroup>
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creating account..." : "Create account"}

@@ -15,9 +15,6 @@ export default function Home() {
             <Link href="/features" className="text-sm font-medium hover:underline underline-offset-4">
               Features
             </Link>
-            <Link href="/pricing" className="text-sm font-medium hover:underline underline-offset-4">
-              Pricing
-            </Link>
             <Link href="/about" className="text-sm font-medium hover:underline underline-offset-4">
               About
             </Link>
@@ -50,11 +47,6 @@ export default function Home() {
                     <Button size="lg" className="gap-1.5">
                       Get Started
                       <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                  <Link href="/demo">
-                    <Button size="lg" variant="outline">
-                      View Demo
                     </Button>
                   </Link>
                 </div>
