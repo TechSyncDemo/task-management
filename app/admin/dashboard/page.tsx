@@ -11,7 +11,7 @@ export default function AdminDashboardPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Admin Dashboard</h2>
         <div className="flex items-center gap-2">
-          <Link href="/admin/projects/new">
+          <Link href="/createproject">
             <Button>New Project</Button>
           </Link>
         </div>
