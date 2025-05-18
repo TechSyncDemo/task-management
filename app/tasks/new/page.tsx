@@ -1,14 +1,19 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card, CardContent, CardDescription,
+  CardFooter, CardHeader, CardTitle
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select, SelectContent, SelectItem,
+  SelectTrigger, SelectValue
+} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -27,79 +32,64 @@ export default function NewTaskPage() {
   const [assignee, setAssignee] = useState("")
   const [date, setDate] = useState<Date>()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [projects, setActiveProjects] = useState<ProjectData[]>([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const loadProjects = async () => {
+      setLoading(true)
+      const data = await fetchProjects()
+      console.log("Fetched Projects →", data)
+      setActiveProjects(data)
+      setLoading(false)
+    }
+
+    loadProjects()
+  }, [])
+
+  const createTaskSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // Mock submission - replace with actual API call later
-    setTimeout(() => {
+    const { data: userResponse, error: userError } = await supabase.auth.getUser()
+    const user = userResponse?.user
+
+    if (!user || userError) {
+      alert("You must be logged in to create a task.")
       setIsSubmitting(false)
-      router.push("/tasks")
-    }, 1000)
-  }
-
-const [projects, setActiveProjects] = useState<ProjectData[]>([])
-const [loading, setLoading] = useState(false)
-
-useEffect(() => {
-  const loadProjects = async () => {
-    setLoading(true)
-    const data = await fetchProjects()
-    console.log("Fetched Projects →", data)
-    setActiveProjects(data)
-    setLoading(false)
-  }
-
-  loadProjects()
-}, [])
-
-const createTaskSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsSubmitting(true);
-
-  // Get authenticated user
-  const { data: userResponse, error: userError } = await supabase.auth.getUser();
-  const user = userResponse?.user;
-
-  if (!user || userError) {
-    alert("You must be logged in to create a task.");
-    setIsSubmitting(false);
-    return;
-  }
-
-  // Ensure a project is selected
-  if (!project) {
-    alert("Please select a project.");
-    setIsSubmitting(false);
-    return;
-  }
-
-  // Insert task into Supabase
-  const { error } = await supabase.from("tasks").insert([
-    {
-      title,
-      description,
-      priority,
-      status,
-      assignee,
-      due_date: date,
-      project_id: project, // ✅ Associate task with selected project
-      created_by: user.id, // ✅ Ensure task is linked to the logged-in user
+      return
     }
-  ]);
 
-  if (error) {
-    console.error("Error creating task:", error.message);
-    alert(error.message);
-  } else {
-    alert("Task created successfully!");
-    router.push("/tasks"); // ✅ Redirect after creation
+    if (!project) {
+      alert("Please select a project.")
+      setIsSubmitting(false)
+      return
+    }
+
+    const { error } = await supabase.from("tasks").insert([
+      {
+        title,
+        description,
+        priority,
+        status,
+        assigned_to: assignee,
+        due_date: date,
+        project_id: project,
+        created_by: user.id,
+      },
+    ])
+
+    if (error) {
+      console.error("Error creating task:", error.message)
+      alert(error.message)
+    } else {
+      alert("Task created successfully!")
+      router.push("/tasks")
+    }
+
+    setIsSubmitting(false)
   }
-
-  setIsSubmitting(false);
-};
 
   return (
     <div className="flex flex-col gap-4">
@@ -108,7 +98,7 @@ const createTaskSubmit = async (e: React.FormEvent) => {
       </div>
 
       <Card>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={createTaskSubmit}>
           <CardHeader>
             <CardTitle>Task Details</CardTitle>
             <CardDescription>Enter the information for the new task</CardDescription>
@@ -143,15 +133,14 @@ const createTaskSubmit = async (e: React.FormEvent) => {
                   <SelectTrigger id="project">
                     <SelectValue placeholder="Select project" />
                   </SelectTrigger>
-                     <SelectContent>
-  <SelectItem value="not-applicable">Not Applicable</SelectItem>
-
-  {projects.map((project) => (
-    <SelectItem key={project.id} value={project.id}>
-      {project.name}
-    </SelectItem>
-  ))}
-</SelectContent>
+                  <SelectContent>
+                    <SelectItem value="not-applicable">Not Applicable</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
 
@@ -175,7 +164,6 @@ const createTaskSubmit = async (e: React.FormEvent) => {
                   <SelectTrigger id="status">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
-               
                   <SelectContent>
                     <SelectItem value="todo">To Do</SelectItem>
                     <SelectItem value="in-progress">In Progress</SelectItem>
@@ -184,8 +172,6 @@ const createTaskSubmit = async (e: React.FormEvent) => {
                 </Select>
               </div>
 
-
-
               <div className="space-y-2">
                 <Label htmlFor="assignee">Assignee</Label>
                 <Select value={assignee} onValueChange={setAssignee} required>
@@ -193,11 +179,11 @@ const createTaskSubmit = async (e: React.FormEvent) => {
                     <SelectValue placeholder="Select assignee" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="me">Myself</SelectItem>
-                    <SelectItem value="sarah">Sarah Johnson</SelectItem>
-                    <SelectItem value="michael">Michael Chen</SelectItem>
-                    <SelectItem value="emily">Emily Rodriguez</SelectItem>
-                    <SelectItem value="david">David Kim</SelectItem>
+                    <SelectItem value="uuid-me">Myself</SelectItem>
+                    <SelectItem value="uuid-sarah">Sarah Johnson</SelectItem>
+                    <SelectItem value="uuid-michael">Michael Chen</SelectItem>
+                    <SelectItem value="uuid-emily">Emily Rodriguez</SelectItem>
+                    <SelectItem value="uuid-david">David Kim</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -226,28 +212,15 @@ const createTaskSubmit = async (e: React.FormEvent) => {
               Cancel
             </Button>
             <Button
-  type="submit"
-  disabled={isSubmitting}
-  onClick={(e) => handleSubmit(e)} // 🔄 Correct way to pass the event
-  className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
->
-  {isSubmitting ? (
-    <> Creating...
-    </>
-  ) : (
-    "Create Task"
-  )}
-</Button>
-            {/* <Button type="submit" disabled={isSubmitting}>
-              onClick={createTaskSubmit}
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
+            >
               {isSubmitting ? "Creating..." : "Create Task"}
-            </Button> */}
+            </Button>
           </CardFooter>
         </form>
       </Card>
     </div>
   )
 }
-
-//////////////
-
