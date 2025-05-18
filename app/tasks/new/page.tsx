@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,7 +14,8 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, fetchProjects, ProjectData } from "@/lib/utils"
+import { supabase } from "@/lib/supabaseClient"
 
 export default function NewTaskPage() {
   const router = useRouter()
@@ -26,6 +27,7 @@ export default function NewTaskPage() {
   const [assignee, setAssignee] = useState("")
   const [date, setDate] = useState<Date>()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,6 +39,67 @@ export default function NewTaskPage() {
       router.push("/tasks")
     }, 1000)
   }
+
+const [projects, setActiveProjects] = useState<ProjectData[]>([])
+const [loading, setLoading] = useState(false)
+
+useEffect(() => {
+  const loadProjects = async () => {
+    setLoading(true)
+    const data = await fetchProjects()
+    console.log("Fetched Projects →", data)
+    setActiveProjects(data)
+    setLoading(false)
+  }
+
+  loadProjects()
+}, [])
+
+const createTaskSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+
+  // Get authenticated user
+  const { data: userResponse, error: userError } = await supabase.auth.getUser();
+  const user = userResponse?.user;
+
+  if (!user || userError) {
+    alert("You must be logged in to create a task.");
+    setIsSubmitting(false);
+    return;
+  }
+
+  // Ensure a project is selected
+  if (!project) {
+    alert("Please select a project.");
+    setIsSubmitting(false);
+    return;
+  }
+
+  // Insert task into Supabase
+  const { error } = await supabase.from("tasks").insert([
+    {
+      title,
+      description,
+      priority,
+      status,
+      assignee,
+      due_date: date,
+      project_id: project, // ✅ Associate task with selected project
+      created_by: user.id, // ✅ Ensure task is linked to the logged-in user
+    }
+  ]);
+
+  if (error) {
+    console.error("Error creating task:", error.message);
+    alert(error.message);
+  } else {
+    alert("Task created successfully!");
+    router.push("/tasks"); // ✅ Redirect after creation
+  }
+
+  setIsSubmitting(false);
+};
 
   return (
     <div className="flex flex-col gap-4">
@@ -80,13 +143,15 @@ export default function NewTaskPage() {
                   <SelectTrigger id="project">
                     <SelectValue placeholder="Select project" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="website-redesign">Website Redesign</SelectItem>
-                    <SelectItem value="mobile-app">Mobile App Development</SelectItem>
-                    <SelectItem value="marketing">Marketing Campaign</SelectItem>
-                    <SelectItem value="database">Database Migration</SelectItem>
-                    <SelectItem value="api">API Project</SelectItem>
-                  </SelectContent>
+                     <SelectContent>
+  <SelectItem value="not-applicable">Not Applicable</SelectItem>
+
+  {projects.map((project) => (
+    <SelectItem key={project.id} value={project.id}>
+      {project.name}
+    </SelectItem>
+  ))}
+</SelectContent>
                 </Select>
               </div>
 
@@ -110,6 +175,7 @@ export default function NewTaskPage() {
                   <SelectTrigger id="status">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
+               
                   <SelectContent>
                     <SelectItem value="todo">To Do</SelectItem>
                     <SelectItem value="in-progress">In Progress</SelectItem>
@@ -117,6 +183,8 @@ export default function NewTaskPage() {
                   </SelectContent>
                 </Select>
               </div>
+
+
 
               <div className="space-y-2">
                 <Label htmlFor="assignee">Assignee</Label>
@@ -157,12 +225,29 @@ export default function NewTaskPage() {
             <Button variant="outline" type="button" onClick={() => router.back()}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button
+  type="submit"
+  disabled={isSubmitting}
+  onClick={(e) => handleSubmit(e)} // 🔄 Correct way to pass the event
+  className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
+>
+  {isSubmitting ? (
+    <> Creating...
+    </>
+  ) : (
+    "Create Task"
+  )}
+</Button>
+            {/* <Button type="submit" disabled={isSubmitting}>
+              onClick={createTaskSubmit}
               {isSubmitting ? "Creating..." : "Create Task"}
-            </Button>
+            </Button> */}
           </CardFooter>
         </form>
       </Card>
     </div>
   )
 }
+
+//////////////
+

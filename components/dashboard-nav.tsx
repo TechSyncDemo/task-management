@@ -28,11 +28,6 @@ export function DashboardNav({ isAdmin = false }: NavProps) {
       href: "/projects",
       icon: FolderKanban,
     },
-    {
-      title: "Time Tracking",
-      href: "/time-tracking",
-      icon: Clock,
-    },
   ]
 
   const adminLinks = [
