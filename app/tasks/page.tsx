@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -9,71 +9,41 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CheckCircle, Clock, AlertCircle, Plus, Search } from "lucide-react"
 import Link from "next/link"
+import { supabase } from "@/lib/supabaseClient"
 
-// Mock data for tasks
-const mockTasks = [
-  {
-    id: 1,
-    title: "Design Homepage Mockup",
-    project: "Website Redesign",
-    status: "in-progress",
-    priority: "high",
-    dueDate: "2023-05-15",
-    assignedTo: "You",
-  },
-  {
-    id: 2,
-    title: "API Integration",
-    project: "Mobile App Development",
-    status: "in-progress",
-    priority: "medium",
-    dueDate: "2023-05-18",
-    assignedTo: "You",
-  },
-  {
-    id: 3,
-    title: "User Testing",
-    project: "Website Redesign",
-    status: "todo",
-    priority: "medium",
-    dueDate: "2023-05-25",
-    assignedTo: "You",
-  },
-  {
-    id: 4,
-    title: "Documentation",
-    project: "API Project",
-    status: "todo",
-    priority: "low",
-    dueDate: "2023-05-30",
-    assignedTo: "You",
-  },
-  {
-    id: 5,
-    title: "Create Login Page",
-    project: "Website Redesign",
-    status: "completed",
-    priority: "high",
-    dueDate: "2023-05-10",
-    assignedTo: "You",
-  },
-  {
-    id: 6,
-    title: "Database Schema Design",
-    project: "Database Migration",
-    status: "completed",
-    priority: "high",
-    dueDate: "2023-05-08",
-    assignedTo: "You",
-  },
-]
 
 export default function TasksPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [priorityFilter, setPriorityFilter] = useState("all")
 
-  const filteredTasks = mockTasks.filter((task) => {
+
+const [tasks, setTasks] = useState<any[]>([])
+const [loading, setLoading] = useState(true)
+const [error, setError] = useState<string | null>(null)
+
+
+  useEffect(() => {
+  const fetchTasks = async () => {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("*") 
+
+    if (error) {
+      setError("Failed to load tasks")
+      console.error(error)
+    } else {
+      setTasks(data)
+    }
+    setLoading(false)
+  }
+
+  fetchTasks()
+}, [])
+
+
+  const filteredTasks = tasks.filter((task) => {
     const matchesSearch =
       task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.project.toLowerCase().includes(searchTerm.toLowerCase())
