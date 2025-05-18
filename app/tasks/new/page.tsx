@@ -36,6 +36,22 @@ export default function NewTaskPage() {
   const [projects, setActiveProjects] = useState<ProjectData[]>([])
   const [loading, setLoading] = useState(false)
 
+  const [users, setUsers] = useState<{ id: string; email: string }[]>([])
+
+useEffect(() => {
+  const loadUsers = async () => {
+    const { data, error } = await supabase.from("users").select("id, email")
+    if (error) {
+      console.error("Error loading users:", error.message)
+      return
+    }
+    setUsers(data)
+  }
+
+  loadUsers()
+}, [])
+
+
   useEffect(() => {
     const loadProjects = async () => {
       setLoading(true)
@@ -165,14 +181,16 @@ export default function NewTaskPage() {
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="todo">To Do</SelectItem>
-                    <SelectItem value="in-progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="Not Started">Not Started</SelectItem>
+    <SelectItem value="In Progress">In Progress</SelectItem>
+    <SelectItem value="Hold">Hold</SelectItem>
+    <SelectItem value="Completed">Completed</SelectItem>
+    
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="assignee">Assignee</Label>
                 <Select value={assignee} onValueChange={setAssignee} required>
                   <SelectTrigger id="assignee">
@@ -186,7 +204,24 @@ export default function NewTaskPage() {
                     <SelectItem value="uuid-david">David Kim</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
+
+              <div className="space-y-2">
+  <Label htmlFor="assignee">Assignee</Label>
+  <Select value={assignee} onValueChange={setAssignee} required>
+    <SelectTrigger id="assignee">
+      <SelectValue placeholder="Select assignee" />
+    </SelectTrigger>
+    <SelectContent>
+      {users.map((user) => (
+        <SelectItem key={user.id} value={user.id}>
+          {user.email}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</div>
+
 
               <div className="space-y-2">
                 <Label>Due Date</Label>
