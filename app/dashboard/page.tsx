@@ -1,11 +1,68 @@
+"use client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CheckCircle, Clock, ListTodo, AlertCircle } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabaseClient"
 
 export default function DashboardPage() {
+
+  interface UserProject {
+  id: number;
+  name: string;
+  progress: number;
+}
+
+
+   const [projects, setProjects] = useState<UserProject []>([]);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      // Fetch all projects
+      const { data: projectsData, error: projectsError } = await supabase
+        .from("projects")
+        .select("id, name");
+
+      if (projectsError) {
+        console.error(projectsError);
+        return;
+      }
+
+      const calculatedProjects = await Promise.all(
+        projectsData.map(async (project) => {
+          const { data: tasks, error: tasksError } = await supabase
+            .from("tasks")
+            .select("status")
+            .eq("project_id", project.id);
+
+          if (tasksError) {
+            console.error(tasksError);
+            return { ...project, progress: 0 };
+          }
+
+          const total = tasks.length;
+          const completed = tasks.filter((t) => t.status === "Completed").length;
+          const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+          
+
+          return {
+            ...project,
+            progress,
+          };
+        })
+      );
+
+      setProjects(calculatedProjects);
+    };
+
+    fetchProjects();
+  }, []);
+
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -66,7 +123,7 @@ export default function DashboardPage() {
             </Card>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
+            {/* <Card className="col-span-4">
               <CardHeader>
                 <CardTitle>Project Progress</CardTitle>
               </CardHeader>
@@ -110,7 +167,28 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
+
+             <Card className="col-span-4">
+      <CardHeader>
+        <CardTitle>Project Progress</CardTitle>
+      </CardHeader>
+      <CardContent className="pl-2">
+        <div className="space-y-4">
+          {projects.map((project) => (
+            <div key={project.id} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{project.name}</span>
+                <span className="text-sm text-muted-foreground">
+                  {project.progress}%
+                </span>
+              </div>
+              <Progress value={project.progress} className="h-2" />
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
             <Card className="col-span-3">
               <CardHeader>
                 <CardTitle>Upcoming Deadlines</CardTitle>
