@@ -19,10 +19,89 @@ export default function DashboardPage() {
 
 
    const [projects, setProjects] = useState<UserProject []>([]);
+   const [totalTasks, setTotalTasks] = useState(0);
+  const [completedTasks, setCompletedTasks] = useState(0);
+
+
+  // useEffect(() => {
+  //   const fetchTaskCounts = async () => {
+  //     const { data: { user }, error: userError } = await supabase.auth.getUser();
+  //     if (userError || !user) {
+  //       console.error("Error fetching user:", userError);
+  //       return;
+  //     }
+
+  //      console.log("👤 Logged in user ID:", user.id);
+
+  //     const userId = user.id; 
+  //     const { data: tasks, error: tasksError } = await supabase
+  //       .from("tasks")
+  //       .select("status")
+  //       .eq("created_by", userId); 
+
+  //     if (tasksError) {
+  //       console.error("Error fetching tasks:", tasksError);
+  //       return;
+  //     }
+
+  //     console.log("📦 Fetched tasks:", tasks);
+
+  //     const total = tasks.length;
+  //     const completed = tasks.filter((task) => task.status === "Completed").length;
+
+  //         console.log("✅ Total:", total);
+  //   console.log("✅ Completed:", completed);
+
+  //     setTotalTasks(total);
+  //     setCompletedTasks(completed);
+  //     fetchTaskCounts();
+  //   }});
+
+  useEffect(() => {
+    const fetchTaskCounts = async () => {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        console.error("❌ Error fetching user:", userError);
+        return;
+      }
+
+      console.log("👤 Logged in user ID:", user.id);
+      const userId = user.id;
+
+      const { data: tasks, error: tasksError } = await supabase
+        .from("tasks")
+        .select("status, created_by") // fetch more fields for debugging
+        .eq("created_by", userId);
+
+      if (tasksError) {
+        console.error("❌ Error fetching tasks:", tasksError);
+        return;
+      }
+
+      console.log("📦 Fetched tasks:", tasks);
+
+      const total = tasks.length;
+      const completed = tasks.filter(
+        (task) => task.status?.toLowerCase() === "completed"
+      ).length;
+
+      console.log("✅ Total:", total);
+      console.log("✅ Completed:", completed);
+
+      setTotalTasks(total);
+      setCompletedTasks(completed);
+    };
+
+    fetchTaskCounts(); // ✅ CALL the function
+  }, []); // ✅ Empty dependency array so it runs once on mount
+
 
   useEffect(() => {
     const fetchProjects = async () => {
-      // Fetch all projects
       const { data: projectsData, error: projectsError } = await supabase
         .from("projects")
         .select("id, name");
@@ -87,8 +166,7 @@ export default function DashboardPage() {
                 <ListTodo className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">24</div>
-                <p className="text-xs text-muted-foreground">+2 from yesterday</p>
+                <div className="text-2xl font-bold">{totalTasks}</div>
               </CardContent>
             </Card>
             <Card>
@@ -97,8 +175,7 @@ export default function DashboardPage() {
                 <CheckCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">12</div>
-                <p className="text-xs text-muted-foreground">+4 from last week</p>
+                <div className="text-2xl font-bold">{completedTasks}</div>
               </CardContent>
             </Card>
             <Card>
