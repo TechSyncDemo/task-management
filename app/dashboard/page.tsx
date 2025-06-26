@@ -200,52 +200,6 @@ export default function DashboardPage() {
             </Card>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            {/* <Card className="col-span-4">
-              <CardHeader>
-                <CardTitle>Project Progress</CardTitle>
-              </CardHeader>
-              <CardContent className="pl-2">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Website Redesign</span>
-                      </div>
-                      <span className="text-sm text-muted-foreground">75%</span>
-                    </div>
-                    <Progress value={75} className="h-2" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Mobile App Development</span>
-                      </div>
-                      <span className="text-sm text-muted-foreground">45%</span>
-                    </div>
-                    <Progress value={45} className="h-2" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Marketing Campaign</span>
-                      </div>
-                      <span className="text-sm text-muted-foreground">90%</span>
-                    </div>
-                    <Progress value={90} className="h-2" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Database Migration</span>
-                      </div>
-                      <span className="text-sm text-muted-foreground">30%</span>
-                    </div>
-                    <Progress value={30} className="h-2" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card> */}
-
              <Card className="col-span-4">
       <CardHeader>
         <CardTitle>Project Progress</CardTitle>

@@ -59,7 +59,7 @@ const [error, setError] = useState<string | null>(null)
   const completedTasks = filteredTasks.filter((task) => task.status === "completed")
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 p-4 md:p-6 lg:p-8">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Tasks</h2>
         <Link href="/tasks/new">
@@ -76,7 +76,7 @@ const [error, setError] = useState<string | null>(null)
           <CardDescription>Filter tasks by status, priority, or search term</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-4 md:flex-row">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:gap-6">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
