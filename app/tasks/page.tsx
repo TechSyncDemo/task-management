@@ -76,7 +76,7 @@ const [error, setError] = useState<string | null>(null)
           <CardDescription>Filter tasks by status, priority, or search term</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:gap-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

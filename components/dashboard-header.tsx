@@ -23,6 +23,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             <Clock className="h-5 w-5" />
             <span>TaskFlow</span>
           </Link>
+          
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-2">
