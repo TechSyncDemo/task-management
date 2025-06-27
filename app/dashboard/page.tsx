@@ -16,6 +16,8 @@ export default function DashboardPage() {
   name: string;
   progress: number;
   due_date: string; 
+  daysLeft?: number;
+  description?: string; 
 }
 
 
@@ -24,6 +26,8 @@ export default function DashboardPage() {
   const [completedTasks, setCompletedTasks] = useState(0);
   const [progress, setProgress] = useState(0);
   const [overdueTasks, setOverdueTasks] = useState(0);
+  const [upcomingProjects, setUpcomingProjects] = useState<UserProject[]>([]);
+
 
 
 
@@ -125,6 +129,42 @@ export default function DashboardPage() {
   }, []);
 
 
+
+  useEffect(() => {
+  const fetchUpcomingProjects = async () => {
+    const { data, error } = await supabase
+      .from("projects")
+      .select("id, name, due_date, description");
+
+    if (error || !data) {
+      console.error("❌ Error fetching upcoming projects:", error);
+      return;
+    }
+
+    const now = new Date();
+
+    const upcoming = data
+      .map((project) => {
+        const dueDate = new Date(project.due_date);
+        const timeDiff = dueDate.getTime() - now.getTime();
+        const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+        return {
+          ...project,
+           progress: 0,
+          daysLeft,
+        };
+      })
+      .filter((p) => p.daysLeft >= 0 && p.daysLeft <= 7)
+      .sort((a, b) => a.daysLeft - b.daysLeft);
+
+    setUpcomingProjects(upcoming);
+  };
+
+  fetchUpcomingProjects();
+}, []);
+
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -201,150 +241,43 @@ export default function DashboardPage() {
         </div>
       </CardContent>
     </Card>
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Upcoming Deadlines</CardTitle>
-                <CardDescription>Tasks due in the next 7 days</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium leading-none">Design Homepage Mockup</p>
-                      <p className="text-sm text-muted-foreground">Website Redesign</p>
-                    </div>
-                    <div className="text-sm text-red-500 font-medium">Tomorrow</div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium leading-none">API Integration</p>
-                      <p className="text-sm text-muted-foreground">Mobile App Development</p>
-                    </div>
-                    <div className="text-sm text-muted-foreground">In 3 days</div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium leading-none">Content Creation</p>
-                      <p className="text-sm text-muted-foreground">Marketing Campaign</p>
-                    </div>
-                    <div className="text-sm text-muted-foreground">In 5 days</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+
+    <Card className="col-span-3">
+  <CardHeader>
+    <CardTitle>Upcoming Deadlines</CardTitle>
+    <CardDescription>Tasks due in the next 7 days</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      {upcomingProjects.length === 0 ? (
+        <p className="text-muted-foreground">No upcoming projects</p>
+      ) : (
+        upcomingProjects.map((project) => (
+          <div key={project.id} className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium leading-none">{project.name}</p>
+              {project.description && (
+                <p className="text-sm text-muted-foreground">{project.description}</p>
+              )}
+            </div>
+            <div
+              className={`text-sm font-medium ${
+                project.daysLeft === 0 ? "text-red-500" : "text-muted-foreground"
+              }`}
+            >
+              {project.daysLeft === 0
+                ? "Today"
+                : project.daysLeft === 1
+                ? "Tomorrow"
+                : `In ${project.daysLeft} days`}
+            </div>
           </div>
-        </TabsContent>
-        <TabsContent value="my-tasks" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>My Tasks</CardTitle>
-              <CardDescription>View and manage your assigned tasks</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="rounded-md border">
-                <div className="flex items-center p-4 border-b">
-                  <div className="flex-1 space-y-1">
-                    <p className="font-medium">Design Homepage Mockup</p>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <span>Website Redesign</span>
-                      <span className="mx-2">•</span>
-                      <span className="text-red-500">Due Tomorrow</span>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    View
-                  </Button>
-                </div>
-                <div className="flex items-center p-4 border-b">
-                  <div className="flex-1 space-y-1">
-                    <p className="font-medium">API Integration</p>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <span>Mobile App Development</span>
-                      <span className="mx-2">•</span>
-                      <span>Due in 3 days</span>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    View
-                  </Button>
-                </div>
-                <div className="flex items-center p-4 border-b">
-                  <div className="flex-1 space-y-1">
-                    <p className="font-medium">User Testing</p>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <span>Website Redesign</span>
-                      <span className="mx-2">•</span>
-                      <span>Due in 1 week</span>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    View
-                  </Button>
-                </div>
-                <div className="flex items-center p-4">
-                  <div className="flex-1 space-y-1">
-                    <p className="font-medium">Documentation</p>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <span>API Project</span>
-                      <span className="mx-2">•</span>
-                      <span>Due in 2 weeks</span>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    View
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="recent" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Your recent actions and updates</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">You completed "Create Login Page"</p>
-                    <p className="text-sm text-muted-foreground">2 hours ago</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <Clock className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">You started "API Integration"</p>
-                    <p className="text-sm text-muted-foreground">Yesterday at 3:45 PM</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <ListTodo className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">You were assigned to "User Testing"</p>
-                    <p className="text-sm text-muted-foreground">2 days ago</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">You completed "Database Schema Design"</p>
-                    <p className="text-sm text-muted-foreground">3 days ago</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        ))
+      )}
+    </div>
+  </CardContent>
+</Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
