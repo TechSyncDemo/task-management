@@ -15,47 +15,17 @@ export default function DashboardPage() {
   id: number;
   name: string;
   progress: number;
+  due_date: string; 
 }
 
 
    const [projects, setProjects] = useState<UserProject []>([]);
    const [totalTasks, setTotalTasks] = useState(0);
   const [completedTasks, setCompletedTasks] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [overdueTasks, setOverdueTasks] = useState(0);
 
 
-  // useEffect(() => {
-  //   const fetchTaskCounts = async () => {
-  //     const { data: { user }, error: userError } = await supabase.auth.getUser();
-  //     if (userError || !user) {
-  //       console.error("Error fetching user:", userError);
-  //       return;
-  //     }
-
-  //      console.log("👤 Logged in user ID:", user.id);
-
-  //     const userId = user.id; 
-  //     const { data: tasks, error: tasksError } = await supabase
-  //       .from("tasks")
-  //       .select("status")
-  //       .eq("created_by", userId); 
-
-  //     if (tasksError) {
-  //       console.error("Error fetching tasks:", tasksError);
-  //       return;
-  //     }
-
-  //     console.log("📦 Fetched tasks:", tasks);
-
-  //     const total = tasks.length;
-  //     const completed = tasks.filter((task) => task.status === "Completed").length;
-
-  //         console.log("✅ Total:", total);
-  //   console.log("✅ Completed:", completed);
-
-  //     setTotalTasks(total);
-  //     setCompletedTasks(completed);
-  //     fetchTaskCounts();
-  //   }});
 
   useEffect(() => {
     const fetchTaskCounts = async () => {
@@ -74,37 +44,49 @@ export default function DashboardPage() {
 
       const { data: tasks, error: tasksError } = await supabase
         .from("tasks")
-        .select("status, created_by") // fetch more fields for debugging
+        .select("status, created_by, due_date") // fetch more fields for debugging
         .eq("created_by", userId);
 
       if (tasksError) {
         console.error("❌ Error fetching tasks:", tasksError);
         return;
       }
+      const now = new Date();
+
 
       console.log("📦 Fetched tasks:", tasks);
+      console.log("🧪 Supabase returned projects:", projects);
 
       const total = tasks.length;
       const completed = tasks.filter(
         (task) => task.status?.toLowerCase() === "completed"
       ).length;
+      const progress = tasks.filter(
+        (task) => task.status?.toLowerCase() === "in progress"
+      ).length;
+      const overdue = tasks.filter((task) => {
+      const dueDate = new Date(task.due_date);
+      return dueDate < now && task.status?.toLowerCase() !== "completed";
+    }).length;
 
       console.log("✅ Total:", total);
       console.log("✅ Completed:", completed);
 
       setTotalTasks(total);
       setCompletedTasks(completed);
+      setProgress(progress);
+      setOverdueTasks(overdue);
     };
 
-    fetchTaskCounts(); // ✅ CALL the function
-  }, []); // ✅ Empty dependency array so it runs once on mount
+    fetchTaskCounts(); 
+  }, []); 
 
 
   useEffect(() => {
     const fetchProjects = async () => {
       const { data: projectsData, error: projectsError } = await supabase
         .from("projects")
-        .select("id, name");
+        .select("id, name, due_date");
 
       if (projectsError) {
         console.error(projectsError);
@@ -120,17 +102,18 @@ export default function DashboardPage() {
 
           if (tasksError) {
             console.error(tasksError);
-            return { ...project, progress: 0 };
+            return { ...project, progress: 0 , due_date: project.due_date }; // Return project with 0% progress if error
           }
 
-          const total = tasks.length;
-          const completed = tasks.filter((t) => t.status === "Completed").length;
-          const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+          // const total = tasks.length;
+          // const completed = tasks.filter((t) => t.status === "Completed").length;
+          // const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
           
-
           return {
             ...project,
             progress,
+               due_date: project.due_date, 
+            
           };
         })
       );
@@ -184,8 +167,7 @@ export default function DashboardPage() {
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">7</div>
-                <p className="text-xs text-muted-foreground">-2 from yesterday</p>
+                <div className="text-2xl font-bold">{progress}</div>
               </CardContent>
             </Card>
             <Card>
@@ -194,8 +176,7 @@ export default function DashboardPage() {
                 <AlertCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">5</div>
-                <p className="text-xs text-muted-foreground">+2 from yesterday</p>
+                <div className="text-2xl font-bold">{overdueTasks}</div>
               </CardContent>
             </Card>
           </div>
