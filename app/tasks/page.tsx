@@ -22,13 +22,27 @@ const [tasks, setTasks] = useState<any[]>([])
 const [loading, setLoading] = useState(true)
 const [error, setError] = useState<string | null>(null)
 
+const [userId, setUserId] = useState<string | null>(null);
+
+   useEffect(() => {
+    // Get current user ID from Supabase Auth
+    const getUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (data?.user) {
+        setUserId(data.user.id);
+      }
+    };
+    getUser();
+  }, []);
+
 
   useEffect(() => {
+    if (!userId) return;
   const fetchTasks = async () => {
     setLoading(true)
     const { data, error } = await supabase
       .from("tasks")
-      .select("*") 
+      .select("*").eq("assigned_to", userId)
 
     if (error) {
       setError("Failed to load tasks")

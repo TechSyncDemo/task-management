@@ -1,11 +1,42 @@
+"use client"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Clock, ListTodo, Users, BarChart3 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabaseClient"
 
 export default function AdminDashboardPage() {
+
+  type TeamMember = {
+  id: string;
+  full_name: string;
+  email: string;
+  position: string;
+  role: string;
+};
+
+
+  // const [team, setTeam] = useState([]);
+    const [team, setTeam] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTeam = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("users") // or 'users_role' if that's your table
+        .select("id, full_name, email, position, role")
+        .eq("role", "staff"); // or whatever your staff role is
+      if (!error) setTeam(data || []);
+      setLoading(false);
+    };
+    fetchTeam();
+  }, []);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -259,7 +290,30 @@ export default function AdminDashboardPage() {
               <CardTitle>Team Members</CardTitle>
               <CardDescription>Manage your team and their workload</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+             <CardContent className="space-y-4">
+          <div className="rounded-md border">
+            {loading ? (
+              <div className="p-4">Loading team members...</div>
+            ) : (
+              team.map((member) => (
+                <div key={member.id} className="flex items-center p-4 border-b last:border-b-0">
+                  <div className="flex-1 space-y-1">
+                    <p className="font-medium">{member.full_name || member.email}</p>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <span>{member.position || "Staff"}</span>
+                      <span className="mx-2">•</span>
+                      <span>{member.email}</span>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    View Profile
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+            {/* <CardContent className="space-y-4">
               <div className="rounded-md border">
                 <div className="flex items-center p-4 border-b">
                   <div className="flex-1 space-y-1">
@@ -327,7 +381,7 @@ export default function AdminDashboardPage() {
                   </Button>
                 </div>
               </div>
-            </CardContent>
+            </CardContent> */}
           </Card>
         </TabsContent>
       </Tabs>
