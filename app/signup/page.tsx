@@ -115,6 +115,7 @@ const Signup = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [position, setPosition] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignup = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -135,8 +136,48 @@ const Signup = () => {
     } else {
       console.log('User signed up:', data);
       alert('Account created successfully!');
-      router.push('/dashboard'); // Redirect user after signup
+      // router.push('/dashboard'); // Redirect user after signup
     }
+
+    const user = data.user;
+  // if (user) {
+  //   const { error: insertError } = await supabase
+  //     .from('users_role')
+  //     .insert([
+  //       {
+  //         id: user.id, 
+  //         // Use the same UUID as auth.users
+  //         name: name,
+  //         email: email,
+  //         position: position,
+  //         role: 'user' // or 'staff' if you want
+  //       }
+  //     ]);
+
+  if (user) {
+  const insertData = {
+     id: user.id,        // Set id to Auth user UUID
+    // user_id: user.id,   // Set user_id to Auth user UUID
+    full_name: name,
+    email: email,
+    position: position,
+    role: 'staff'
+  };
+  console.log("Insert data:", insertData);
+
+  const { error: insertError } = await supabase
+    .from('users')
+    .insert([insertData]);
+
+      
+    if (insertError) {
+      console.error('DB insert error:', insertError);
+      alert('Signup succeeded but failed to save profile details.');
+    } else {
+      alert('Account created successfully!');
+      // router.push('/dashboard');
+    }
+  }
 
     setIsLoading(false);
   };
@@ -168,6 +209,17 @@ const Signup = () => {
                   required
                 />
               </div>
+              <div className="grid gap-2">
+  <Label htmlFor="position">Position</Label>
+  <Input
+    id="position"
+    type="text"
+    placeholder="e.g. Developer, Designer"
+    value={position}
+    onChange={(e) => setPosition(e.target.value)}
+    required
+  />
+</div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input

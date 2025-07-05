@@ -20,7 +20,7 @@ export default function LoginPage() {
   // Hardcoded Admin Credentials
   const ADMIN_CREDENTIALS = {
     email: "admin@company.com",
-    password: "AdminPassword123", // Change this to a more secure password
+    password: "Admin@123", // Change this to a more secure password
   };
 
   const handleLogin = async (role: string) => {
