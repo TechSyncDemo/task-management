@@ -19,10 +19,41 @@ export default function AdminDashboardPage() {
   role: string;
 };
 
+type Project = {
+  id: string;
+  name: string;
+  due_date: string;
+  severity: string;
+};
+
+
 
   // const [team, setTeam] = useState([]);
-    const [team, setTeam] = useState<TeamMember[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const today = new Date();
+
+  useEffect(() => {
+  const fetchProjects = async () => {
+    setProjectsLoading(true);
+    const { data, error } = await supabase
+      .from("projects")
+      .select("id, name, due_date, severity"); // adjust if your status field is different
+    if (!error) setProjects(data || []);
+    setProjectsLoading(false);
+  };
+
+
+  fetchProjects();
+}, []);
+
+const activeProjects = projects.filter(project => {
+  if (!project.due_date) return false;
+  return new Date(project.due_date) >= today;
+});
 
   useEffect(() => {
     const fetchTeam = async () => {
@@ -192,7 +223,83 @@ export default function AdminDashboardPage() {
             </Card>
           </div>
         </TabsContent>
+
         <TabsContent value="projects" className="space-y-4">
+  <Card>
+    <CardHeader>
+      <CardTitle>Active Projects</CardTitle>
+      <CardDescription>Manage and monitor all ongoing projects</CardDescription>
+    </CardHeader>
+
+    <CardContent className="space-y-4">
+  <div className="rounded-md border">
+    {projectsLoading ? (
+      <div className="p-4">Loading projects...</div>
+    ) : activeProjects.length === 0 ? (
+      <div className="p-4">No active projects found.</div>
+    ) : (
+      activeProjects.map((project) => (
+        <div key={project.id} className="flex items-center p-4 border-b last:border-b-0">
+          <div className="flex-1 space-y-1">
+            <p className="font-medium">{project.name}</p>
+            <div className="flex items-center text-sm text-muted-foreground">
+              <span className="mx-2">•</span>
+              <span>
+                Due on{" "}
+                {project.due_date
+                  ? new Date(project.due_date).toLocaleDateString()
+                  : "N/A"}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+              View
+            </Button>
+          </div>
+        </div>
+      ))
+    )}
+  </div>
+</CardContent>
+
+
+
+    {/* <CardContent className="space-y-4">
+      <div className="rounded-md border">
+        {projectsLoading ? (
+          <div className="p-4">Loading projects...</div>
+        ) : projects.length === 0 ? (
+          <div className="p-4">No active projects found.</div>
+        ) : (
+          projects.map((project) => (
+            <div key={project.id} className="flex items-center p-4 border-b last:border-b-0">
+              <div className="flex-1 space-y-1">
+                <p className="font-medium">{project.name}</p>
+                <div className="flex items-center text-sm text-muted-foreground">
+                  {/* <span>Lead: {project.lead}</span> */}
+                  {/* <span className="mx-2">•</span>
+                  <span>
+                    Due {project.due_date ? `on ${new Date(project.due_date).toLocaleDateString()}` : "N/A"}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-medium">{project.progress ?? 0}%</div>
+                <Button variant="outline" size="sm">
+                  View
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
+      </div> */}
+    {/* </CardContent> */} 
+  </Card>
+</TabsContent>
+
+
+        {/* <TabsContent value="projects" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Active Projects</CardTitle>
@@ -283,7 +390,7 @@ export default function AdminDashboardPage() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent> */}
         <TabsContent value="team" className="space-y-4">
           <Card>
             <CardHeader>
