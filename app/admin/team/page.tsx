@@ -1,59 +1,53 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Search, Plus, Mail, Phone } from "lucide-react"
-import Link from "next/link"
-
-// Mock data for team members
-const mockTeamMembers = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    email: "sarah.johnson@example.com",
-    phone: "+1 (555) 123-4567",
-    role: "Design Lead",
-    department: "Design",
-    activeTasks: 5,
-    avatar: "/placeholder.svg",
-  },
- 
-  {
-    id: 7,
-    name: "Amanda Wilson",
-    email: "amanda.wilson@example.com",
-    phone: "+1 (555) 789-0123",
-    role: "UI Designer",
-    department: "Design",
-    activeTasks: 4,
-    avatar: "/placeholder.svg",
-  },
-  {
-    id: 8,
-    name: "John Martinez",
-    email: "john.martinez@example.com",
-    phone: "+1 (555) 890-1234",
-    role: "Backend Developer",
-    department: "Development",
-    activeTasks: 7,
-    avatar: "/placeholder.svg",
-  },
-]
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Search, Plus, Mail } from "lucide-react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function TeamPage() {
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm, setSearchTerm] = useState("");
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredTeamMembers = mockTeamMembers.filter(
+  useEffect(() => {
+    const fetchAll = async () => {
+      const [{ data: users }, { data: projects }, { data: tasks }] =
+        await Promise.all([
+          supabase.from("users").select("id, full_name, email, position, role"),
+          supabase.from("projects").select("id, name"),
+          supabase.from("tasks").select("id, assigned_to, project_id"),
+        ]);
+      setTeamMembers(users || []);
+      setProjects(projects || []);
+      setTasks(tasks || []);
+      setLoading(false);
+    };
+    fetchAll();
+  }, []);
+
+  // Filtered by search
+  const filteredTeamMembers = teamMembers.filter(
     (member) =>
-      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.department.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+      (member.full_name || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (member.position || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -83,38 +77,50 @@ export default function TeamPage() {
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All Members</TabsTrigger>
-          <TabsTrigger value="design">Design</TabsTrigger>
-          <TabsTrigger value="development">Development</TabsTrigger>
-          <TabsTrigger value="marketing">Marketing</TabsTrigger>
-          <TabsTrigger value="management">Management</TabsTrigger>
+          {projects.map((project) => (
+            <TabsTrigger key={project.id} value={project.id}>
+              {project.name}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Team Members</CardTitle>
-              <CardDescription>Manage your team and their workload</CardDescription>
+              <CardDescription>
+                Manage your team and their workload
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-6">
                 {filteredTeamMembers.map((member) => (
-                  <div key={member.id} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div
+                    key={member.id}
+                    className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
                     <div className="flex items-center gap-4">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
+                        <AvatarImage
+                          src={member.avatar || "/placeholder.svg"}
+                          alt={member.full_name}
+                        />
                         <AvatarFallback>
-                          {member.name
+                          {(member.full_name || "")
                             .split(" ")
-                            .map((n) => n[0])
+                            .map((n: string) => n[0])
                             .join("")}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{member.name}</p>
+                        <p className="font-medium">{member.full_name}</p>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>{member.role}</span>
+                          <span>{member.position}</span>
                           <span>•</span>
-                          <Badge variant="outline">{member.department}</Badge>
+                          <Badge variant="outline">
+                            {member.role.charAt(0).toUpperCase() +
+                              member.role.slice(1)}
+                          </Badge>
                         </div>
                       </div>
                     </div>
@@ -123,13 +129,8 @@ export default function TeamPage() {
                         <Mail className="h-4 w-4 text-muted-foreground" />
                         <span>{member.email}</span>
                       </div>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span>{member.phone}</span>
-                      </div>
                     </div>
                     <div className="flex items-center gap-2 self-end sm:self-center">
-                      <div className="text-sm font-medium">{member.activeTasks} active tasks</div>
                       <Button variant="outline" size="sm">
                         View Profile
                       </Button>
@@ -141,222 +142,81 @@ export default function TeamPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="design" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Design Team</CardTitle>
-              <CardDescription>Members of the design department</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6">
-                {filteredTeamMembers
-                  .filter((member) => member.department === "Design")
-                  .map((member) => (
-                    <div key={member.id} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
-                          <AvatarFallback>
-                            {member.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{member.name}</p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>{member.role}</span>
-                            <span>•</span>
-                            <Badge variant="outline">{member.department}</Badge>
+        {projects.map((project) => (
+          <TabsContent
+            key={project.id}
+            value={project.id}
+            className="space-y-4"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>{project.name} Team</CardTitle>
+                <CardDescription>
+                  Members assigned to {project.name}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6">
+                  {filteredTeamMembers
+                    .filter((member) =>
+                      tasks.some(
+                        (task) =>
+                          String(task.project_id).trim() ===
+                            String(project.id).trim() &&
+                          String(task.assigned_to).trim() ===
+                            String(member.id).trim()
+                      )
+                    )
+                    .map((member) => (
+                      <div
+                        key={member.id}
+                        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div>
+                            <p className="font-medium">{member.full_name}</p>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <span>{member.position}</span>
+                              <span>•</span>
+                              <Badge variant="outline">
+                                {member.role.charAt(0).toUpperCase() +
+                                  member.role.slice(1)}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex flex-col gap-1 sm:items-end">
-                        <div className="flex items-center gap-1 text-sm">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <span>{member.email}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span>{member.phone}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 self-end sm:self-center">
-                        <div className="text-sm font-medium">{member.activeTasks} active tasks</div>
-                        <Button variant="outline" size="sm">
-                          View Profile
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="development" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Development Team</CardTitle>
-              <CardDescription>Members of the development department</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6">
-                {filteredTeamMembers
-                  .filter((member) => member.department === "Development")
-                  .map((member) => (
-                    <div key={member.id} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
-                          <AvatarFallback>
-                            {member.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{member.name}</p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>{member.role}</span>
-                            <span>•</span>
-                            <Badge variant="outline">{member.department}</Badge>
+                        <div className="flex flex-col gap-1 sm:items-end">
+                          <div className="flex items-center gap-1 text-sm">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <span>{member.email}</span>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex flex-col gap-1 sm:items-end">
-                        <div className="flex items-center gap-1 text-sm">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <span>{member.email}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span>{member.phone}</span>
+                        <div className="flex items-center gap-2 self-end sm:self-center">
+                          <Button variant="outline" size="sm">
+                            View Profile
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 self-end sm:self-center">
-                        <div className="text-sm font-medium">{member.activeTasks} active tasks</div>
-                        <Button variant="outline" size="sm">
-                          View Profile
-                        </Button>
-                      </div>
+                    ))}
+                  {filteredTeamMembers.filter((member) =>
+                    tasks.some(
+                      (task) =>
+                        String(task.project_id).trim() ===
+                          String(project.id).trim() &&
+                        String(task.assigned_to).trim() ===
+                          String(member.id).trim()
+                    )
+                  ).length === 0 && (
+                    <div className="text-muted-foreground text-sm">
+                      No members assigned tasks in this project.
                     </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="marketing" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Marketing Team</CardTitle>
-              <CardDescription>Members of the marketing department</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6">
-                {filteredTeamMembers
-                  .filter((member) => member.department === "Marketing")
-                  .map((member) => (
-                    <div key={member.id} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
-                          <AvatarFallback>
-                            {member.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{member.name}</p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>{member.role}</span>
-                            <span>•</span>
-                            <Badge variant="outline">{member.department}</Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1 sm:items-end">
-                        <div className="flex items-center gap-1 text-sm">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <span>{member.email}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span>{member.phone}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 self-end sm:self-center">
-                        <div className="text-sm font-medium">{member.activeTasks} active tasks</div>
-                        <Button variant="outline" size="sm">
-                          View Profile
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="management" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Management Team</CardTitle>
-              <CardDescription>Members of the management department</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6">
-                {filteredTeamMembers
-                  .filter((member) => member.department === "Management")
-                  .map((member) => (
-                    <div key={member.id} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
-                          <AvatarFallback>
-                            {member.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{member.name}</p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>{member.role}</span>
-                            <span>•</span>
-                            <Badge variant="outline">{member.department}</Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1 sm:items-end">
-                        <div className="flex items-center gap-1 text-sm">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <span>{member.email}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span>{member.phone}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 self-end sm:self-center">
-                        <div className="text-sm font-medium">{member.activeTasks} active tasks</div>
-                        <Button variant="outline" size="sm">
-                          View Profile
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        ))}
       </Tabs>
     </div>
-  )
+  );
 }
