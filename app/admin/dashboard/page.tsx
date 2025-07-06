@@ -34,6 +34,10 @@ type Project = {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
+   const [totalProjects, setTotalProjects] = useState(0);
+  const [activeTasks, setActiveTasks] = useState(0);
+  const [teamCount, setTeamCount] = useState(0);
+  const [completionRate, setCompletionRate] = useState(0);
   const today = new Date();
 
   useEffect(() => {
@@ -42,12 +46,31 @@ type Project = {
     const { data, error } = await supabase
       .from("projects")
       .select("id, name, due_date, severity"); // adjust if your status field is different
-    if (!error) setProjects(data || []);
+    if (!error) {
+        setProjects(data || []);
+        setTotalProjects(data ? data.length : 0);
+      }
+      
+      // setProjects(data || []);
     setProjectsLoading(false);
   };
 
 
   fetchProjects();
+}, []);
+
+useEffect(() => {
+  const fetchTeamCount = async () => {
+    const { data, error } = await supabase
+      .from("users")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "staff");
+    if (!error) {
+      setTeamCount(data.length); // If not using head: true
+      // OR if using head: true, use: setTeamCount(data.count);
+    }
+  };
+  fetchTeamCount();
 }, []);
 
 const activeProjects = projects.filter(project => {
@@ -63,10 +86,26 @@ const activeProjects = projects.filter(project => {
         .select("id, full_name, email, position, role")
         .eq("role", "staff"); // or whatever your staff role is
       if (!error) setTeam(data || []);
+      setTeamCount(data ? data.length : 0);
+      
       setLoading(false);
     };
     fetchTeam();
   }, []);
+
+  useEffect(() => {
+  const fetchTasks = async () => {
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("id, status");
+    if (!error && data) {
+      setActiveTasks(data.filter((t) => t.status === "In Progress").length);
+      const completed = data.filter((t) => t.status === "Completed").length;
+      setCompletionRate(data.length ? Math.round((completed / data.length) * 100) : 0);
+    }
+  };
+  fetchTasks();
+}, []);
 
   return (
     <div className="flex flex-col gap-4">
@@ -92,8 +131,8 @@ const activeProjects = projects.filter(project => {
                 <ListTodo className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">12</div>
-                <p className="text-xs text-muted-foreground">+2 from last month</p>
+                <div className="text-2xl font-bold">{totalProjects}</div>
+                {/* <p className="text-xs text-muted-foreground">+2 from last month</p> */}
               </CardContent>
             </Card>
             <Card>
@@ -102,8 +141,8 @@ const activeProjects = projects.filter(project => {
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">64</div>
-                <p className="text-xs text-muted-foreground">+8 from last week</p>
+                <div className="text-2xl font-bold">{activeTasks}</div>
+                {/* <p className="text-xs text-muted-foreground">+8 from last week</p> */}
               </CardContent>
             </Card>
             <Card>
@@ -112,8 +151,8 @@ const activeProjects = projects.filter(project => {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">24</div>
-                <p className="text-xs text-muted-foreground">+4 from last month</p>
+                <div className="text-2xl font-bold">{teamCount}</div>
+                {/* <p className="text-xs text-muted-foreground">+4 from last month</p> */}
               </CardContent>
             </Card>
             <Card>
@@ -122,8 +161,8 @@ const activeProjects = projects.filter(project => {
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">78%</div>
-                <p className="text-xs text-muted-foreground">+5% from last month</p>
+                <div className="text-2xl font-bold">{completionRate}%</div>
+                {/* <p className="text-xs text-muted-foreground">+5% from last month</p> */}
               </CardContent>
             </Card>
           </div>
