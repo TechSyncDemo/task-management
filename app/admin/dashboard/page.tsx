@@ -38,7 +38,57 @@ type Project = {
   const [activeTasks, setActiveTasks] = useState(0);
   const [teamCount, setTeamCount] = useState(0);
   const [completionRate, setCompletionRate] = useState(0);
+  const [teamPerformance, setTeamPerformance] = useState<
+  { position: string; percent: number; completed: number; total: number }[]
+>([]);
   const today = new Date();
+
+
+useEffect(() => {
+  const fetchPerformance = async () => {
+    // 1. Fetch all staff with position
+    const { data: users, error: userError } = await supabase
+      .from("users")
+      .select("id, position")
+      .eq("role", "staff");
+
+    // 2. Fetch all tasks
+    const { data: tasks, error: taskError } = await supabase
+      .from("tasks")
+      .select("id, assigned_to, status");
+
+    if (!userError && !taskError && users && tasks) {
+      // 3. Group users by position
+      const positionMap: { [position: string]: string[] } = {};
+      users.forEach((u) => {
+        if (!u.position) return;
+        if (!positionMap[u.position]) positionMap[u.position] = [];
+        positionMap[u.position].push(u.id);
+      });
+
+      // 4. For each position, calculate completion %
+      const perf = Object.entries(positionMap).map(([position, ids]) => {
+        const userTasks = tasks.filter((t) => ids.includes(t.assigned_to));
+        const total = userTasks.length;
+        const completed = userTasks.filter(
+          (t) => t.status && t.status.toLowerCase() === "completed"
+        ).length;
+        return {
+          position,
+          percent: total ? Math.round((completed / total) * 100) : 0,
+          completed,
+          total,
+        };
+      });
+
+      // 5. Sort by percent descending
+      perf.sort((a, b) => b.percent - a.percent);
+
+      setTeamPerformance(perf);
+    }
+  };
+  fetchPerformance();
+}, []);
 
   useEffect(() => {
   const fetchProjects = async () => {
@@ -132,7 +182,6 @@ const activeProjects = projects.filter(project => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalProjects}</div>
-                {/* <p className="text-xs text-muted-foreground">+2 from last month</p> */}
               </CardContent>
             </Card>
             <Card>
@@ -222,7 +271,34 @@ const activeProjects = projects.filter(project => {
                 </div>
               </CardContent>
             </Card>
+
             <Card className="col-span-3">
+  <CardHeader>
+    <CardTitle>Team Performance</CardTitle>
+    <CardDescription>Task completion by department</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      {teamPerformance.length === 0 ? (
+        <div className="text-muted-foreground text-sm">No data available.</div>
+      ) : (
+        teamPerformance.map((perf) => (
+          <div key={perf.position} className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-medium">{perf.position}</span>
+              <span className="text-sm text-muted-foreground">
+                {perf.percent}% ({perf.completed}/{perf.total} completed)
+              </span>
+            </div>
+            <Progress value={perf.percent} className="h-2" />
+          </div>
+        ))
+      )}
+    </div>
+  </CardContent>
+</Card>
+
+            {/* <Card className="col-span-3">
               <CardHeader>
                 <CardTitle>Team Performance</CardTitle>
                 <CardDescription>Task completion by department</CardDescription>
@@ -259,7 +335,7 @@ const activeProjects = projects.filter(project => {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
         </TabsContent>
 
