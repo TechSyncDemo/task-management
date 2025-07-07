@@ -75,12 +75,7 @@ export function DashboardNav({ isAdmin = false }: NavProps) {
           </span>
         </Link>
       ))}
-      {/* <Link href="/settings">
-        <span className="group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground">
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
-        </span>
-      </Link> */}
+
       <Link href="/login">
         <span className="group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground">
           <LogOut className="mr-2 h-4 w-4" />

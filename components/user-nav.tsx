@@ -29,15 +29,11 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">John Doe</p>
-            <p className="text-xs leading-none text-muted-foreground">john.doe@example.com</p>
+            <p className="text-sm font-medium leading-none">Admin</p>
+            <p className="text-xs leading-none text-muted-foreground">admin@company.com</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => router.push("/profile")}>Profile</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => router.push("/settings")}>Settings</DropdownMenuItem>
-        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push("/login")}>Log out</DropdownMenuItem>
       </DropdownMenuContent>
