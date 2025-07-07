@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { BarChart3, CheckSquare, Clock, FolderKanban, LayoutDashboard, LogOut, Settings, Users } from "lucide-react"
+import { BarChart3, CheckSquare, FolderKanban, LayoutDashboard, LogOut, Users } from "lucide-react"
 
 interface NavProps {
   isAdmin?: boolean
