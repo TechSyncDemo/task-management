@@ -68,9 +68,9 @@ const [userId, setUserId] = useState<string | null>(null);
     return matchesSearch && matchesStatus && matchesPriority
   })
 
-  const todoTasks = filteredTasks.filter((task) => task.status === "todo")
-  const inProgressTasks = filteredTasks.filter((task) => task.status === "in-progress")
-  const completedTasks = filteredTasks.filter((task) => task.status === "completed")
+  const todoTasks = filteredTasks.filter((task) => task.status === "Not Started")
+  const inProgressTasks = filteredTasks.filter((task) => task.status === "In Progress")
+  const completedTasks = filteredTasks.filter((task) => task.status === "Completed")
 
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6 lg:p-8">

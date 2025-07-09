@@ -32,6 +32,48 @@ export default function DashboardPage() {
   const [overdueTasks, setOverdueTasks] = useState(0);
   const [upcomingProjects, setUpcomingProjects] = useState<UserProject[]>([]);
   const [assignedTasks, setAssignedTasks] = useState<any[]>([]);
+    const [projectProgress, setProjectProgress] = useState<
+      {
+        id: string;
+        name: string;
+        total: number;
+        completed: number;
+        percent: number;
+      }[]
+    >([]);
+
+      useEffect(() => {
+        const fetchProjectProgress = async () => {
+          // Fetch all projects
+          const { data: projects, error: projectError } = await supabase
+            .from("projects")
+            .select("id, name");
+    
+          // Fetch all tasks
+          const { data: tasks, error: taskError } = await supabase
+            .from("tasks")
+            .select("id, project_id, status");
+    
+          if (!projectError && !taskError && projects && tasks) {
+            const progress = projects.map((project) => {
+              const projectTasks = tasks.filter((t) => t.project_id === project.id);
+              const total = projectTasks.length;
+              const completed = projectTasks.filter(
+                (t) => t.status && t.status.toLowerCase() === "completed"
+              ).length;
+              return {
+                id: project.id,
+                name: project.name,
+                total,
+                completed,
+                percent: total ? Math.round((completed / total) * 100) : 0,
+              };
+            });
+            setProjectProgress(progress);
+          }
+        };
+        fetchProjectProgress();
+      }, []);
 
   useEffect(() => {
     const fetchAssignedTasks = async () => {
@@ -252,7 +294,7 @@ export default function DashboardPage() {
             </Card>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
+            {/* <Card className="col-span-4">
               <CardHeader>
                 <CardTitle>Project Progress</CardTitle>
               </CardHeader>
@@ -271,7 +313,43 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
+
+
+            <Card className="col-span-4">
+                          <CardHeader>
+                            <CardTitle>Project Progress</CardTitle>
+                            <CardDescription>
+                              Overview of all projects with progress
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="pl-2">
+                            <div className="space-y-4">
+                              {projectProgress.length === 0 ? (
+                                <div className="text-muted-foreground text-sm">
+                                  No projects found.
+                                </div>
+                              ) : (
+                                projectProgress.map((proj) => (
+                                  <div key={proj.id} className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium">{proj.name}</span>
+                                        <span className="text-xs text-muted-foreground">
+                                          ({proj.completed}/{proj.total} tasks)
+                                        </span>
+                                      </div>
+                                      <span className="text-sm text-muted-foreground">
+                                        {proj.percent}%
+                                      </span>
+                                    </div>
+                                    <Progress value={proj.percent} className="h-2" />
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
 
             <Card className="col-span-3">
               <CardHeader>
