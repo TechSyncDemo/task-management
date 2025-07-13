@@ -1,5 +1,13 @@
 apply plugin: 'com.android.application'
 
+
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
 android {
     namespace "com.rptaskmanagement.com"
     compileSdk rootProject.ext.compileSdkVersion
